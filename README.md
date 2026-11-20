@@ -4,7 +4,7 @@
 [![rank](https://make.fun/badge/news-image-20261120/fiqirealme52-max/NewsImage20/rank.svg)](https://make.fun/bounty/news-image-20261120/leaderboard?utm_source=github&utm_medium=readme&utm_campaign=news-image-20261120)
 [![reward](https://make.fun/badge/news-image-20261120/fiqirealme52-max/NewsImage20/reward.svg)](https://make.fun/bounty/news-image-20261120?utm_source=github&utm_medium=readme&utm_campaign=news-image-20261120)
 
-A newspaper front page that sums up the world's news of **Friday 20 November 2026** in one 1024×1024 image: a lead story on Trump's delayed Iran decision, plus nine more stories from weather, politics, culture and sport — each with a small drawn illustration, a bold headline and a one-line caption.
+A newspaper front page that sums up the world's news of **Friday 20 November 2026** in one 1024×1024 image: a lead story on Trump's delayed Iran decision, plus nine more stories from weather, politics, culture and sport — each numbered, with a section label, a small drawn illustration, a bold headline and a 2–3 line body, plus an IN BRIEF strip recapping all ten stories.
 
 ## The ten stories
 
