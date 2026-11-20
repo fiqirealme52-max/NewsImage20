@@ -4,18 +4,18 @@
 [![rank](https://make.fun/badge/news-image-20261120/fiqirealme52-max/NewsImage20/rank.svg)](https://make.fun/bounty/news-image-20261120/leaderboard?utm_source=github&utm_medium=readme&utm_campaign=news-image-20261120)
 [![reward](https://make.fun/badge/news-image-20261120/fiqirealme52-max/NewsImage20/reward.svg)](https://make.fun/bounty/news-image-20261120?utm_source=github&utm_medium=readme&utm_campaign=news-image-20261120)
 
-A newspaper front page that sums up the world's news of **Friday 20 November 2026** in one 1024×1024 image — **38 stories**: a masthead, a giant date with an italic three-headline sub, a six-number strip, region tabs (World 5 · Americas 6 · Europe 5 · Asia 9 · Sport 11 · Culture 2), three big illustrated leads, ten medium stories with small drawn illustrations, a world map with 13 numbered pins, an "Also on Friday" list of 25 more stories, a DATE CHECK box naming the other-day stories deliberately left out, and a sources footer. Every fact comes only from sources dated 20 November 2026.
+A newspaper front page that sums up the world's news of **Friday 20 November 2026** in one 1024×1024 image — **38 stories**: a giant serif date masthead ("Friday 20 November 2026" under the kicker "THE WORLD IN ONE DAY"), a six-number strip, geographic region tabs (World 1 · Europe 8 · Americas 7 · Asia-Pacific 10 · Mideast 6 · Africa 3 · Oceania 3), three big scene-illustrated leads (Cyclone Akvan #01, Trump, Kyiv), ten medium stories with small coloured illustrations and visible "CONFIRMED · outlet" source tags, a dark navy world map with 13 numbered pins and a legend, an "Also on Friday" list of 25 more stories, a DATE CHECK box naming the other-day stories deliberately left out, a HOW SURE line, and a sources footer. Every fact comes only from sources dated 20 November 2026.
 
 ## The thirteen featured stories
 
-1. **Trump delays Iran decision** — no rush on war; he will "see what happens" after 1 January and decide in 2027.
-2. **Missiles hit Kyiv overnight** — Russia fires nearly 20 ballistic missiles at Kyiv; bridges are hit, fires burn in several districts; a three-storey building in Obolonskyi catches fire; no casualties reported at first. (Reuters, Kyiv Independent, Daily Baku, 20 Nov 2026.)
-3. **COP31 drops fossil-fuel phase-out** — the climate summit closes in Antalya, but the final draft drops the call to phase out fossil fuels, sparking outcry.
-4. **Wall Street sinks** — Dow falls below 50,000 to 49,097; S&P 500 −2.02% (fifth straight loss), Nasdaq −2.25% as the AI selloff deepens.
-5. **5.6 quake near New Caledonia** — a 5.6-magnitude quake strikes 548 km south-east of Nouméa, 10 km deep.
-6. **US war with Iran cost $48bn** — the Pentagon says the US war with Iran has cost over $48 billion so far.
-7. **Cyclone Akvan hits Odisha** — 300,000 evacuated as the storm makes landfall on the coast.
-8. **Pochettino takes over United** — new Manchester United head coach calls for unity in his first address; United are 18th, first match Liverpool at Anfield on Sunday.
+1. **Cyclone Akvan hits Odisha** — 300,000 evacuated as the storm makes landfall on the coast.
+2. **Trump delays Iran decision** — no rush on war; he will "see what happens" after 1 January and decide in 2027.
+3. **Missiles hit Kyiv overnight** — Russia fires nearly 20 ballistic missiles at Kyiv; bridges are hit, fires burn in several districts; a three-storey building in Obolonskyi catches fire; no casualties reported at first. (Reuters, Kyiv Independent, Daily Baku, 20 Nov 2026.)
+4. **COP31 drops fossil-fuel phase-out** — the climate summit closes in Antalya, but the final draft drops the call to phase out fossil fuels, sparking outcry.
+5. **Wall Street sinks** — Dow falls below 50,000 to 49,097; S&P 500 −2.02% (fifth straight loss), Nasdaq −2.25% as the AI selloff deepens.
+6. **5.6 quake near New Caledonia** — a 5.6-magnitude quake strikes 548 km south-east of Nouméa, 10 km deep.
+7. **US war with Iran cost $48bn** — the Pentagon says the US war with Iran has cost over $48 billion so far.
+8. **Pochettino joins United** — new Manchester United head coach calls for unity in his first address; United are 18th, first match Liverpool at Anfield on Sunday.
 9. **India v NZ, day 2** — Nicholls' unbeaten 175 and Phillips' 118 lift New Zealand to 368 all out; India reach 52 without loss. (ESPNcricinfo, Reuters, 20 Nov 2026.)
 10. **ASEAN summit closes** — digital trade deal sealed; sea code still unresolved.
 11. **Haiti troop deal** — Salvadoran troops approved as gang strikes widen.
