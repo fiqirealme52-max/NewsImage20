@@ -1,6 +1,7 @@
 /**
  * NewsImage20 — entry program for the make.fun news-image-20261120
- * competition ("World News — 20 November 2026", 38-story rebuilt edition).
+ * competition ("World News — 20 November 2026", 38-story VISUAL
+ * REVISION edition).
  *
  * The front page is drawn ahead of time by draw.py and shipped as
  * entry.png next to this file. This program copies those exact bytes
@@ -10,6 +11,18 @@
  *   - its IHDR chunk says 1024 x 1024 pixels (the competition cap),
  *   - it fits inside the 1 MiB size limit.
  * If any check fails the program throws instead of writing output.
+ *
+ * What changed in the visual revision (same 38 verified stories,
+ * same facts, same dates — only the presentation):
+ *   - Cyclone Akvan is lead #01 with a big coloured scene; Trump and
+ *     Kyiv keep their leads with full-width night/dusk scene bands.
+ *   - Masthead is the giant serif date "Friday 20 November 2026"
+ *     under the kicker "THE WORLD IN ONE DAY".
+ *   - All ten medium stories carry small coloured illustrations and
+ *     a visible "CONFIRMED . outlet" source tag.
+ *   - The world map is dark navy with cream continents, red pins and
+ *     a legend; the paper is warm cream with serif headlines.
+ *   - Region tabs are geographic and sum to 38.
  *
  * Deterministic by construction: the same input bytes always produce
  * the same output bytes. No network, no clock, no randomness, and
@@ -65,8 +78,10 @@ function main(): void {
   writeFileSync(target, bytes);
 
   // One line on stdout so a run's result is visible in the grader log.
-  // The bundled picture is the 38-story rebuilt front page (13 featured
-  // stories + 25 one-liners, all verified from Friday 20 November 2026).
+  // The bundled picture is the 38-story visual-revision front page
+  // (Akvan lead #01 with a big scene, serif date masthead, illustrated
+  // mediums, navy map — all 38 stories verified from 20 November 2026).
+  // Edition: visual-revision (draw.py, top-10/top-50 research 2026-11-20).
   const digest = createHash("sha256").update(bytes).digest("hex").slice(0, 16);
   console.log(`Wrote ${target} (${bytes.length} bytes, ${width}x${height}, sha256 ${digest}…)`);
 }
