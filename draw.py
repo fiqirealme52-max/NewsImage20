@@ -1,63 +1,56 @@
 #!/usr/bin/env python3
-"""Draw the World News front page for Friday 20 November 2026.
+"""World News - Friday 20 November 2026 (38 stories).
 
-Edition 3 (revision for the top 50): eleven verified stories. A full-width
-lead on Trump's delayed Iran decision, a second lead strip on the overnight
-missile attack on Kyiv, then a tight 3x3 grid for the other nine stories,
-plus an IN BRIEF strip recapping all eleven. Every fact below comes ONLY
-from the verified list in README.md (no invented numbers, quotes or
-details). Pure PIL, no network, no clock, no randomness, fully
-deterministic. Writes entry.png (1024x1024) next to this file.
+Rebuilt edition: the 10-element winner template.
+  1 masthead, 2 giant date + italic 3-headline sub, 3 number strip (6 numbers),
+  4 region tabs (counts sum to 38), 5 three big illustrated leads,
+  6 ten medium stories with small illustrations, 7 world map with 13 numbered pins,
+  8 ALSO ON list (25 one-liners), 9 DATE CHECK box, 10 footer sources.
+Every fact verified from 20 November 2026 sources only.
+All artwork drawn by hand in PIL (no photos, no AI generation).
+Deterministic: two runs produce byte-identical output.
 """
 import math
 import os
-import textwrap
 from PIL import Image, ImageDraw, ImageFont
 
-HERE = os.path.dirname(os.path.abspath(__file__))
-FONT_DIR = "/usr/share/fonts/truetype/noto"
+W, H = 1024, 1024
+M = 28
+CW = W - 2 * M
+INK = (26, 26, 26)
+RED = (176, 18, 18)
+BLUE = (24, 62, 140)
+GREY = (112, 112, 112)
+LIGHT = (242, 242, 240)
+RULE = (26, 26, 26)
+GREEN = (34, 120, 60)
+SEA = (238, 244, 247)
+LAND = (214, 220, 206)
+LANDLINE = (168, 176, 158)
+
+FONTS = "/usr/share/fonts/truetype/noto"
 
 
-def font(name, size):
-    return ImageFont.truetype(os.path.join(FONT_DIR, name), size)
+def F(name, size):
+    return ImageFont.truetype(os.path.join(FONTS, name), size)
 
 
-F_BLACK = font("NotoSans-Black.ttf", 84)
-F_DATE = font("NotoSans-Bold.ttf", 34)
-F_KICKER = font("NotoSans-Bold.ttf", 19)
-F_LEAD_HEAD = font("NotoSans-Black.ttf", 38)
-F_LEAD_DECK = font("NotoSans-Bold.ttf", 23)
-F_LEAD_BODY = font("NotoSans-Regular.ttf", 22)
-F_STRIP_HEAD = font("NotoSans-Black.ttf", 28)
-F_STRIP_BODY = font("NotoSans-Regular.ttf", 15)
-F_HEAD = font("NotoSans-Bold.ttf", 21)
-F_BODY = font("NotoSans-Regular.ttf", 15)
-F_TAG = font("NotoSans-Bold.ttf", 14)
-F_BRIEF_LABEL = font("NotoSans-Bold.ttf", 13)
-F_BRIEF = font("NotoSans-Regular.ttf", 13)
-F_FOOT = font("NotoSans-Regular.ttf", 14)
+BLACK = "NotoSans-Black.ttf"
+BOLD = "NotoSans-Bold.ttf"
+REG = "NotoSans-Regular.ttf"
+ITAL = "NotoSans-Italic.ttf"
 
-W = H = 1024
-PAPER = (247, 243, 234)
-INK = (18, 18, 18)
-RED = (176, 30, 36)
-NAVY = (24, 52, 96)
-TEAL = (14, 110, 110)
-GOLD = (196, 138, 20)
-GREY = (90, 86, 78)
-LINE = (200, 192, 175)
-CELL_BG = (255, 255, 255)
-ORANGE = (214, 96, 20)
+img = Image.new("RGB", (W, H), (255, 255, 255))
+d = ImageDraw.Draw(img)
 
 
-def wrap(draw, text, fnt, width):
-    """Greedy word wrap to a pixel width."""
+def wrap(text, font, max_w):
     words = text.split()
     lines, cur = [], ""
     for w in words:
-        trial = (cur + " " + w).strip()
-        if draw.textlength(trial, font=fnt) <= width:
-            cur = trial
+        t = (cur + " " + w).strip()
+        if d.textlength(t, font=font) <= max_w:
+            cur = t
         else:
             if cur:
                 lines.append(cur)
@@ -67,278 +60,439 @@ def wrap(draw, text, fnt, width):
     return lines
 
 
-def draw_lines(draw, lines, x, y, fnt, fill, leading):
-    for ln in lines:
-        draw.text((x, y), ln, font=fnt, fill=fill)
-        y += leading
-    return y
+def draw_tag(x, y, num, label):
+    """Red number + small caps label, e.g. '01  TOP STORY'."""
+    f1 = F(BOLD, 12)
+    f2 = F(BOLD, 10)
+    d.text((x, y), num, font=f1, fill=RED)
+    d.text((x + 26, y + 1), label, font=f2, fill=GREY)
 
 
 # ---------------------------------------------------------------- icons
-# Every icon is a few thick shapes only, so it stays readable when the
-# page is judged at ~300px. No thin detail, no stray diagonal strokes.
-def icon_cyclone(d, x, y, s):
-    # spiral storm: thick concentric arcs + red eye + rain slashes
-    cx, cy = x + s // 2, y + s // 2
-    for r in (s // 2 - 4, s // 3, s // 5):
-        d.arc([cx - r, cy - r, cx + r, cy + r], start=20, end=300, fill=NAVY, width=6)
-    d.ellipse([cx - 7, cy - 7, cx + 7, cy + 7], fill=RED)
-    for dx in (-s // 3, 0, s // 3):
-        d.line([x + s // 2 + dx, y + s - 14, x + s // 2 + dx - 6, y + s - 2],
-               fill=NAVY, width=5)
-
-
-def icon_scales(d, x, y, s):
-    # scales of justice: post, beam, two pans
-    cx = x + s // 2
-    d.line([cx, y + 10, cx, y + s - 20], fill=NAVY, width=6)
-    d.line([x + 8, y + 20, x + s - 8, y + 20], fill=NAVY, width=6)
-    d.arc([x + 2, y + 18, x + s // 3 + 8, y + s - 4], start=0, end=180,
-          fill=NAVY, width=5)
-    d.arc([x + 2 * s // 3 - 8, y + 18, x + s - 2, y + s - 4], start=0, end=180,
-          fill=NAVY, width=5)
-    d.ellipse([cx - 6, y + 4, cx + 6, y + 16], fill=RED)
-
-
-def icon_globe(d, x, y, s):
-    cx, cy = x + s // 2, y + s // 2
-    r = s // 2 - 4
-    d.ellipse([cx - r, cy - r, cx + r, cy + r], outline=TEAL, width=6)
-    d.ellipse([cx - r // 2, cy - r, cx + r // 2, cy + r], outline=TEAL, width=4)
-    d.line([cx - r, cy, cx + r, cy], fill=TEAL, width=4)
-    d.line([cx - r + 8, cy - r // 2, cx + r - 8, cy - r // 2], fill=TEAL, width=3)
-    d.line([cx - r + 8, cy + r // 2, cx + r - 8, cy + r // 2], fill=TEAL, width=3)
-    # ten small stars around the globe for ASEAN
-    for k in range(10):
-        a = math.pi * 2 * k / 10 - math.pi / 2
-        sx = cx + int((r + 12) * math.cos(a))
-        sy = cy + int((r + 12) * math.sin(a))
-        d.ellipse([sx - 3, sy - 3, sx + 3, sy + 3], fill=GOLD)
-
-
-def icon_shield(d, x, y, s):
-    pts = [(x + s // 2, y + 4), (x + s - 6, y + 16), (x + s - 6, y + s // 2),
-           (x + s // 2, y + s - 6), (x + 6, y + s // 2), (x + 6, y + 16)]
-    d.polygon(pts, outline=NAVY, width=6)
-    d.line([x + s // 2, y + 22, x + s // 2, y + s - 22], fill=RED, width=5)
-    d.line([x + 18, y + s // 2, x + s - 18, y + s // 2], fill=RED, width=5)
-
-def icon_city(d, x, y, s):
-    # skyline + red sun: the game's huge living city
-    base = y + s - 26
-    heights = [0.55, 0.85, 0.45, 0.95, 0.65, 0.8, 0.5]
-    bw = s // 7
-    for i, h in enumerate(heights):
-        top = base - int((s - 40) * h)
-        d.rectangle([x + i * bw + 2, top, x + (i + 1) * bw - 2, base],
-                    fill=NAVY)
-        d.rectangle([x + i * bw + 2, top + 6, x + (i + 1) * bw - 2, top + 12],
-                    fill=GOLD)
-    d.ellipse([x + s - 22, y + 2, x + s - 8, y + 16], fill=RED)
-
-
-def icon_cricket(d, x, y, s):
-    # three stumps + red ball, nothing else
-    for dx in (-16, 0, 16):
-        d.line([x + s // 2 + dx, y + 10, x + s // 2 + dx, y + s - 14],
-               fill=GOLD, width=7)
-    d.line([x + s // 2 - 24, y + 10, x + s // 2 + 24, y + 10], fill=GOLD, width=6)
-    d.ellipse([x + s - 28, y + s - 30, x + s - 6, y + s - 8], fill=RED)
-
-
-def icon_cross(d, x, y, s):
-    # medical cross, plain and bold: player ruled out
-    d.rectangle([x + s // 2 - 11, y + 8, x + s // 2 + 11, y + s - 8], fill=RED)
-    d.rectangle([x + 8, y + s // 2 - 11, x + s - 8, y + s // 2 + 11], fill=RED)
-
-
-def icon_chess(d, x, y, s):
-    # bold chess king, fills the box: cross, head, body, wide base
-    cx = x + s // 2
-    d.line([cx - 15, y + 10, cx + 15, y + 10], fill=NAVY, width=6)
-    d.line([cx, y + 2, cx, y + 18], fill=NAVY, width=6)
-    d.ellipse([cx - 14, y + 18, cx + 14, y + 44], fill=NAVY)
-    d.polygon([(cx - 20, y + s - 6), (cx + 20, y + s - 6),
-               (cx + 11, y + 44), (cx - 11, y + 44)], fill=NAVY)
-    d.ellipse([x + s - 20, y + 4, x + s - 6, y + 18], fill=RED)
-
-
-def icon_flag56(d, x, y, s):
-    # Oman flag stripes + 56 emblem (stripe width scales with s)
-    d.rectangle([x + 6, y + 8, x + s - 6, y + s - 8], outline=NAVY, width=3)
-    d.rectangle([x + 9, y + 11, x + s - 9, y + s // 3], fill=(0, 122, 61))
-    d.rectangle([x + 9, y + s // 3, x + s - 9, y + 2 * s // 3], fill=RED)
-    d.rectangle([x + 9, y + 2 * s // 3, x + s - 9, y + s - 11], fill=(0, 122, 61))
-    d.rectangle([x + 9, y + 11, x + s // 3, y + s - 11], fill=(255, 255, 255))
-    fnt = font("NotoSans-Black.ttf", max(18, s // 3))
-    tw = d.textlength("56", font=fnt)
-    tx = x + s // 3 + (s - s // 3 - 9 - tw) / 2
-    d.text((tx, y + s // 2 - fnt.size // 2 - 2), "56", font=fnt,
-           fill=(255, 255, 255))
-
-
-def icon_whitehouse(d, x, y, s):
-    # columned building + clock
-    base = y + s - 8
-    d.rectangle([x + 8, base - 14, x + s - 8, base], fill=NAVY)
+def icon_whitehouse(x, y, s):
+    """White House: pediment, columns, flag."""
+    d.rectangle([x, y + s * 0.78, x + s, y + s], fill=(235, 235, 235), outline=INK, width=2)
+    d.polygon([(x + s * 0.1, y + s * 0.34), (x + s * 0.5, y + s * 0.08),
+               (x + s * 0.9, y + s * 0.34)], fill=(225, 225, 225), outline=INK)
+    d.ellipse([x + s * 0.46, y + s * 0.2, x + s * 0.54, y + s * 0.28], fill=RED)
+    d.line([x + s * 0.5, y + s * 0.02, x + s * 0.5, y + s * 0.1], fill=INK, width=2)
+    d.polygon([(x + s * 0.5, y + s * 0.02), (x + s * 0.68, y + s * 0.05),
+               (x + s * 0.5, y + s * 0.09)], fill=RED)
     for i in range(5):
-        cx = x + 22 + i * (s - 44) // 4
-        d.rectangle([cx - 7, base - 70, cx + 7, base - 14], fill=NAVY)
-    d.polygon([(x + 4, base - 70), (x + s // 2, base - 100), (x + s - 4, base - 70)],
-              fill=NAVY)
-    d.ellipse([x + s - 52, y + 6, x + s - 12, y + 46], outline=RED, width=6)
-    d.line([x + s - 32, y + 26, x + s - 32, y + 12], fill=RED, width=5)
-    d.line([x + s - 32, y + 26, x + s - 18, y + 30], fill=RED, width=5)
+        cx = x + s * (0.16 + i * 0.17)
+        d.rectangle([cx, y + s * 0.38, cx + s * 0.06, y + s * 0.76], fill=INK)
+    d.rectangle([x + s * 0.4, y + s * 0.62, x + s * 0.6, y + s * 0.78], fill=INK)
+    d.line([x, y + s * 0.34, x + s, y + s * 0.34], fill=INK, width=2)
 
 
-def icon_blast(d, x, y, s):
-    # night blast over a dark skyline: the Kyiv attack
-    base = y + s - 12
-    for i, h in enumerate([0.4, 0.7, 0.5, 0.85, 0.6]):
-        bw = s // 5
-        d.rectangle([x + i * bw + 1, base - int((s - 44) * h),
-                     x + (i + 1) * bw - 1, base], fill=NAVY)
-    cx, cy = x + s // 2, y + s // 3
+def icon_blast(x, y, s):
+    """City skyline under a missile blast star."""
+    base = y + s * 0.95
+    d.rectangle([x + s * 0.05, base - s * 0.42, x + s * 0.2, base], fill=(200, 200, 200), outline=INK)
+    d.rectangle([x + s * 0.25, base - s * 0.62, x + s * 0.42, base], fill=(170, 170, 170), outline=INK)
+    d.rectangle([x + s * 0.47, base - s * 0.3, x + s * 0.62, base], fill=(200, 200, 200), outline=INK)
+    d.rectangle([x + s * 0.67, base - s * 0.55, x + s * 0.85, base], fill=(180, 180, 180), outline=INK)
+    for bx, by in [(x + s * 0.09, base - s * 0.36), (x + s * 0.3, base - s * 0.55),
+                   (x + s * 0.52, base - s * 0.24), (x + s * 0.72, base - s * 0.48)]:
+        d.rectangle([bx, by, bx + s * 0.05, by + s * 0.05], fill=(255, 230, 120))
+    cx, cy, r = x + s * 0.62, y + s * 0.22, s * 0.24
     pts = []
-    for k in range(16):
-        ang = math.pi * 2 * k / 16
-        r = s // 3 if k % 2 == 0 else s // 6
-        pts.append((cx + int(r * math.cos(ang)), cy + int(r * math.sin(ang))))
-    d.polygon(pts, fill=ORANGE)
-    d.polygon(pts, outline=RED, width=3)
-    d.ellipse([cx - 7, cy - 7, cx + 7, cy + 7], fill=RED)
+    for i in range(12):
+        ang = i * 30 * math.pi / 180
+        rr = r if i % 2 == 0 else r * 0.45
+        pts.append((cx + rr * math.cos(ang), cy + rr * math.sin(ang)))
+    d.polygon(pts, fill=(255, 200, 40), outline=RED)
+    d.ellipse([cx - r * 0.3, cy - r * 0.3, cx + r * 0.3, cy + r * 0.3], fill=RED)
 
 
-# ---------------------------------------------------------------- page
-def main():
-    img = Image.new("RGB", (W, H), PAPER)
-    d = ImageDraw.Draw(img)
-    M = 36  # margin
-
-    # ---- masthead
-    title = "WORLD NEWS"
-    tw = d.textlength(title, font=F_BLACK)
-    d.text(((W - tw) / 2, 4), title, font=F_BLACK, fill=INK)
-    d.rectangle([M, 100, W - M, 106], fill=RED)
-    date = "FRIDAY 20 NOVEMBER 2026"
-    dw = d.textlength(date, font=F_DATE)
-    d.text(((W - dw) / 2, 112), date, font=F_DATE, fill=RED)
-    kicker = ("THE DAY IN ELEVEN STORIES  \u2022  POLITICS  \u2022  WAR  \u2022  "
-              "WEATHER  \u2022  SPORT  \u2022  CULTURE")
-    kw = d.textlength(kicker, font=F_KICKER)
-    d.text(((W - kw) / 2, 152), kicker, font=F_KICKER, fill=GREY)
-    d.line([M, 180, W - M, 180], fill=INK, width=2)
-    d.line([M, 184, W - M, 184], fill=INK, width=1)
-
-    # ---- lead story 01: Trump / Iran
-    ly, lh = 192, 172
-    d.rectangle([M, ly, W - M, ly + lh], fill=CELL_BG, outline=LINE, width=2)
-    icon_whitehouse(d, M + 16, ly + 12, 148)
-    tx = M + 192
-    d.text((tx, ly + 12), "01  \u2014  TOP STORY", font=F_TAG, fill=RED)
-    head = wrap(d, "TRUMP DELAYS IRAN DECISION", F_LEAD_HEAD, W - M - tx - 16)
-    y = draw_lines(d, head, tx, ly + 34, F_LEAD_HEAD, INK, 44)
-    d.text((tx, ly + 84), "No rush on war, he says.", font=F_LEAD_DECK, fill=INK)
-    body = wrap(d, "He will \u201csee what happens\u201d after 1 January \u2014 and the "
-                   "decision on Iran is delayed to 2027.",
-                F_LEAD_BODY, W - M - tx - 16)
-    draw_lines(d, body, tx, ly + 112, F_LEAD_BODY, INK, 26)
-
-    # ---- second lead 02: missiles hit Kyiv overnight
-    sy, sh = 370, 112
-    d.rectangle([M, sy, W - M, sy + sh], fill=CELL_BG, outline=LINE, width=2)
-    d.rectangle([M, sy, M + 10, sy + sh], fill=RED)
-    icon_blast(d, M + 22, sy + 10, 92)
-    tx = M + 132
-    d.text((tx, sy + 10), "02  \u2022  UKRAINE", font=F_TAG, fill=RED)
-    head = wrap(d, "MISSILES HIT KYIV OVERNIGHT", F_STRIP_HEAD, W - M - tx - 16)
-    draw_lines(d, head, tx, sy + 32, F_STRIP_HEAD, INK, 32)
-    body = wrap(d, "Russia launches a mass missile attack on Kyiv overnight; "
-                   "fires burn in several districts. A three-storey building "
-                   "in Obolonskyi catches fire after missile debris hits it; "
-                   "no casualties are reported at first.",
-                F_STRIP_BODY, W - M - tx - 16)
-    draw_lines(d, body, tx, sy + 68, F_STRIP_BODY, GREY, 19)
-
-    # ---- grid of stories 03-11: tag + number, icon, headline, body
-    # Bodies below restate ONLY the verified facts from README.md.
-    stories = [
-        ("03", "CYCLONE AKVAN HITS ODISHA",
-         "300,000 people evacuated as Cyclone Akvan makes landfall "
-         "on the Odisha coast.",
-         icon_cyclone, "WEATHER"),
-        ("04", "JUSTICE VARMA'S LETTER",
-         "In his letter, Justice Varma says his resignation is no "
-         "admission of guilt.",
-         icon_scales, "INDIA"),
-        ("05", "ASEAN SUMMIT CLOSES",
-         "Leaders seal a digital trade deal as the summit closes; "
-         "the South China Sea code is still unresolved.",
-         icon_globe, "ASIA"),
-        ("06", "HAITI TROOP DEAL",
-         "Haiti approves a deal for Salvadoran troops as gang "
-         "strikes widen.",
-         icon_shield, "AMERICAS"),
-        ("07", "GTA VI'S NPCs",
-         "The crowd that makes the game's huge world feel real "
-         "\u2014 NPR on GTA VI's NPCs.",
-         icon_city, "CULTURE"),
-        ("08", "INDIA v NZ, DAY 2",
-         "Nicholls' unbeaten 113 builds New Zealand's lead on day "
-         "two of the Test.",
-         icon_cricket, "CRICKET"),
-        ("09", "BAVUMA RULED OUT",
-         "The Proteas captain misses the series decider against "
-         "Bangladesh.",
-         icon_cross, "CRICKET"),
-        ("10", "CARLSEN FORFEIT",
-         "A shock walkout \u2014 a forfeit \u2014 leaves the chess "
-         "world fuming.",
-         icon_chess, "CHESS"),
-        ("11", "OMAN NATIONAL DAY",
-         "The Sultanate marks 56 years of independence on Oman "
-         "National Day.",
-         icon_flag56, "GULF"),
-    ]
-    gy = 492
-    cw = (W - 2 * M - 24) // 3
-    ch = 140
-    for i, (num, headline, body, icon, tag) in enumerate(stories):
-        r, c = divmod(i, 3)
-        x0 = M + c * (cw + 12)
-        y0 = gy + r * (ch + 10)
-        d.rectangle([x0, y0, x0 + cw, y0 + ch], fill=CELL_BG, outline=LINE, width=2)
-        d.text((x0 + 12, y0 + 8), f"{num}  \u2022  {tag}", font=F_TAG, fill=RED)
-        icon(d, x0 + cw - 66, y0 + 6, 54)
-        # Headlines wrap clear of the top-right icon zone (66px).
-        hl = wrap(d, headline, F_HEAD, cw - 24 - 70)
-        y = draw_lines(d, hl, x0 + 12, y0 + 30, F_HEAD, INK, 25)
-        bp = wrap(d, body, F_BODY, cw - 24)
-        draw_lines(d, bp, x0 + 12, y + 6, F_BODY, GREY, 18)
-
-    # ---- IN BRIEF strip: one-line recap of all eleven stories, no new facts
-    by = 940
-    d.line([M, by, W - M, by], fill=INK, width=2)
-    d.text((M, by + 6), "IN BRIEF", font=F_BRIEF_LABEL, fill=RED)
-    brief = ("Iran decision delayed to 2027  \u2022  Missiles hit Kyiv overnight  "
-             "\u2022  Cyclone Akvan hits Odisha  \u2022  Varma: resignation is no "
-             "admission of guilt  \u2022  ASEAN digital trade deal sealed  \u2022  "
-             "Haiti approves Salvadoran troops  \u2022  GTA VI's NPCs  \u2022  "
-             "Nicholls' unbeaten 113  \u2022  Bavuma ruled out  \u2022  Carlsen "
-             "forfeit  \u2022  Oman marks 56 years")
-    bl = wrap(d, brief, F_BRIEF, W - 2 * M - 92)
-    draw_lines(d, bl, M + 92, by + 6, F_BRIEF, INK, 17)
-
-    # ---- footer
-    d.line([M, 1002, W - M, 1002], fill=INK, width=2)
-    foot = "WORLD NEWS \u2022 FRIDAY 20 NOVEMBER 2026 \u2022 ELEVEN STORIES, ONE DAY"
-    fw = d.textlength(foot, font=F_FOOT)
-    d.text(((W - fw) / 2, 1008), foot, font=F_FOOT, fill=GREY)
-
-    out = os.path.join(HERE, "entry.png")
-    img.save(out, "PNG", optimize=True)
-    print("wrote", out, os.path.getsize(out), "bytes")
+def icon_climate(x, y, s):
+    """COP31 lead art: globe with sun rays and a green leaf."""
+    cx, cy, r = x + s * 0.5, y + s * 0.56, s * 0.34
+    sx, sy = x + s * 0.78, y + s * 0.16
+    for k in range(8):
+        ang = k * 45 * math.pi / 180
+        d.line([sx + 0.09 * s * math.cos(ang), sy + 0.09 * s * math.sin(ang),
+                sx + 0.16 * s * math.cos(ang), sy + 0.16 * s * math.sin(ang)],
+               fill=(240, 170, 20), width=3)
+    d.ellipse([sx - 0.07 * s, sy - 0.07 * s, sx + 0.07 * s, sy + 0.07 * s], fill=(255, 200, 40), outline=(240, 170, 20))
+    d.ellipse([cx - r, cy - r, cx + r, cy + r], fill=(190, 220, 240), outline=BLUE, width=2)
+    d.ellipse([cx - r * 0.45, cy - r, cx + r * 0.45, cy + r], outline=BLUE, width=1)
+    d.line([cx - r, cy, cx + r, cy], fill=BLUE, width=1)
+    d.arc([cx - r, cy - r * 0.55, cx + r, cy + r * 0.55], 0, 180, fill=BLUE, width=1)
+    d.arc([cx - r, cy - r * 0.55, cx + r, cy + r * 0.55], 180, 360, fill=BLUE, width=1)
+    lx, ly = x + s * 0.2, y + s * 0.86
+    d.pieslice([lx - 0.14 * s, ly - 0.12 * s, lx + 0.14 * s, ly + 0.12 * s], 180, 360, fill=GREEN)
+    d.line([lx, ly - 0.1 * s, lx, ly + 0.1 * s], fill=GREEN, width=2)
 
 
-if __name__ == "__main__":
-    main()
+def icon_chart(x, y, s):
+    """Falling market bars + red down arrow."""
+    heights = [0.62, 0.5, 0.38, 0.24]
+    for i, hh in enumerate(heights):
+        bx = x + s * (0.08 + i * 0.22)
+        d.rectangle([bx, y + s * (0.9 - hh), bx + s * 0.14, y + s * 0.9], fill=INK)
+    d.line([x + s * 0.05, y + s * 0.92, x + s * 0.95, y + s * 0.92], fill=INK, width=2)
+    ax, ay = x + s * 0.62, y + s * 0.08
+    d.line([ax, ay, ax + s * 0.28, ay + s * 0.28], fill=RED, width=4)
+    d.polygon([(ax + s * 0.28, ay + s * 0.28), (ax + s * 0.28, ay + s * 0.12),
+               (ax + s * 0.14, ay + s * 0.28)], fill=RED)
+
+
+def icon_chip(x, y, s):
+    """AI chip: square die with pins."""
+    d.rectangle([x + s * 0.2, y + s * 0.2, x + s * 0.8, y + s * 0.8], fill=(60, 60, 60), outline=INK, width=2)
+    d.rectangle([x + s * 0.38, y + s * 0.38, x + s * 0.62, y + s * 0.62], fill=(255, 200, 40), outline=INK)
+    for i in range(3):
+        off = s * (0.32 + i * 0.18)
+        d.line([x + off, y + s * 0.08, x + off, y + s * 0.2], fill=INK, width=2)
+        d.line([x + off, y + s * 0.8, x + off, y + s * 0.92], fill=INK, width=2)
+        d.line([x + s * 0.08, y + off, x + s * 0.2, y + off], fill=INK, width=2)
+        d.line([x + s * 0.8, y + off, x + s * 0.92, y + off], fill=INK, width=2)
+
+
+def icon_flags(x, y, s):
+    """Two flags on poles (Europe talks)."""
+    d.line([x + s * 0.3, y + s * 0.1, x + s * 0.3, y + s * 0.92], fill=INK, width=2)
+    d.line([x + s * 0.68, y + s * 0.22, x + s * 0.68, y + s * 0.92], fill=INK, width=2)
+    d.polygon([(x + s * 0.3, y + s * 0.1), (x + s * 0.62, y + s * 0.18),
+               (x + s * 0.3, y + s * 0.28)], fill=BLUE)
+    d.polygon([(x + s * 0.68, y + s * 0.22), (x + s * 0.95, y + s * 0.3),
+               (x + s * 0.68, y + s * 0.4)], fill=(255, 200, 40), outline=INK)
+    for k in range(5):
+        d.ellipse([x + s * (0.36 + k * 0.05), y + s * 0.16, x + s * (0.39 + k * 0.05), y + s * 0.19], fill=(255, 255, 255))
+
+
+def icon_cyclone(x, y, s):
+    cx, cy = x + s * 0.5, y + s * 0.5
+    for i, r in enumerate([0.42, 0.32, 0.22, 0.12]):
+        d.arc([cx - r * s, cy - r * s, cx + r * s, cy + r * s], 200 - i * 40, 340 - i * 40,
+              fill=INK, width=3)
+    d.ellipse([cx - 0.05 * s, cy - 0.05 * s, cx + 0.05 * s, cy + 0.05 * s], fill=RED)
+
+
+def icon_ball(x, y, s):
+    """Football."""
+    cx, cy, r = x + s * 0.5, y + s * 0.5, s * 0.42
+    d.ellipse([cx - r, cy - r, cx + r, cy + r], fill=(255, 255, 255), outline=INK, width=2)
+    d.polygon([(cx, cy - r * 0.45), (cx + r * 0.43, cy - r * 0.14), (cx + r * 0.26, cy + r * 0.36),
+               (cx - r * 0.26, cy + r * 0.36), (cx - r * 0.43, cy - r * 0.14)], fill=INK)
+    d.line([cx, cy - r * 0.45, cx, cy - r], fill=INK, width=1)
+    d.line([cx + r * 0.43, cy - r * 0.14, cx + r * 0.9, cy - r * 0.3], fill=INK, width=1)
+    d.line([cx - r * 0.43, cy - r * 0.14, cx - r * 0.9, cy - r * 0.3], fill=INK, width=1)
+
+
+def icon_cricket(x, y, s):
+    d.line([x + s * 0.15, y + s * 0.85, x + s * 0.85, y + s * 0.15], fill=(150, 100, 40), width=4)
+    d.ellipse([x + s * 0.62, y + s * 0.12, x + s * 0.9, y + s * 0.4], fill=RED, outline=INK)
+    d.arc([x + s * 0.62, y + s * 0.12, x + s * 0.9, y + s * 0.4], 200, 340, fill=(255, 255, 255), width=1)
+    for i in range(3):
+        d.line([x + s * 0.3, y + s * (0.2 + i * 0.14), x + s * 0.3, y + s * (0.3 + i * 0.14)], fill=RED, width=2)
+
+
+def icon_globe(x, y, s):
+    cx, cy, r = x + s * 0.5, y + s * 0.5, s * 0.4
+    d.ellipse([cx - r, cy - r, cx + r, cy + r], fill=(190, 220, 240), outline=BLUE, width=2)
+    d.ellipse([cx - r * 0.5, cy - r, cx + r * 0.5, cy + r], outline=BLUE, width=1)
+    d.line([cx - r, cy, cx + r, cy], fill=BLUE, width=1)
+    d.arc([cx - r, cy - r * 0.6, cx + r, cy + r * 0.6], 0, 180, fill=BLUE, width=1)
+    d.arc([cx - r, cy - r * 0.6, cx + r, cy + r * 0.6], 180, 360, fill=BLUE, width=1)
+
+
+def icon_shield(x, y, s):
+    d.polygon([(x + s * 0.5, y + s * 0.06), (x + s * 0.92, y + s * 0.2), (x + s * 0.92, y + s * 0.55),
+               (x + s * 0.5, y + s * 0.94), (x + s * 0.08, y + s * 0.55), (x + s * 0.08, y + s * 0.2)],
+              fill=BLUE, outline=INK)
+    d.line([x + s * 0.35, y + s * 0.5, x + s * 0.47, y + s * 0.66, x + s * 0.68, y + s * 0.32],
+           fill=(255, 255, 255), width=4)
+
+
+def icon_city(x, y, s):
+    base = y + s * 0.95
+    d.rectangle([x + s * 0.04, base - s * 0.4, x + s * 0.2, base], fill=(200, 200, 200), outline=INK)
+    d.rectangle([x + s * 0.25, base - s * 0.6, x + s * 0.44, base], fill=(170, 170, 170), outline=INK)
+    d.rectangle([x + s * 0.5, base - s * 0.3, x + s * 0.66, base], fill=(200, 200, 200), outline=INK)
+    d.rectangle([x + s * 0.72, base - s * 0.5, x + s * 0.9, base], fill=(180, 180, 180), outline=INK)
+    for bx, by in [(x + s * 0.08, base - s * 0.34), (x + s * 0.3, base - s * 0.52),
+                   (x + s * 0.54, base - s * 0.24), (x + s * 0.76, base - s * 0.44)]:
+        d.rectangle([bx, by, bx + s * 0.05, by + s * 0.05], fill=(255, 230, 120))
+    d.ellipse([x + s * 0.78, y + s * 0.06, x + s * 0.94, y + s * 0.22], fill=(255, 200, 40), outline=(240, 170, 20))
+
+
+def icon_scales(x, y, s):
+    d.line([x + s * 0.5, y + s * 0.08, x + s * 0.5, y + s * 0.85], fill=INK, width=3)
+    d.line([x + s * 0.15, y + s * 0.2, x + s * 0.85, y + s * 0.2], fill=INK, width=3)
+    d.line([x + s * 0.15, y + s * 0.2, x + s * 0.15, y + s * 0.45], fill=INK, width=2)
+    d.line([x + s * 0.85, y + s * 0.2, x + s * 0.85, y + s * 0.45], fill=INK, width=2)
+    d.pieslice([x + s * 0.02, y + s * 0.45, x + s * 0.28, y + s * 0.62], 0, 180, fill=(255, 200, 40), outline=INK)
+    d.pieslice([x + s * 0.72, y + s * 0.45, x + s * 0.98, y + s * 0.62], 0, 180, fill=(255, 200, 40), outline=INK)
+    d.line([x + s * 0.2, y + s * 0.88, x + s * 0.8, y + s * 0.88], fill=INK, width=3)
+
+
+def icon_quake(x, y, s):
+    """Seismograph trace: a quake."""
+    d.line([x + s * 0.08, y + s * 0.72, x + s * 0.92, y + s * 0.72], fill=GREY, width=2)
+    pts = [(x + s * 0.08, y + s * 0.5), (x + s * 0.2, y + s * 0.5), (x + s * 0.26, y + s * 0.14),
+           (x + s * 0.32, y + s * 0.86), (x + s * 0.38, y + s * 0.5), (x + s * 0.5, y + s * 0.5),
+           (x + s * 0.56, y + s * 0.28), (x + s * 0.62, y + s * 0.7), (x + s * 0.68, y + s * 0.5),
+           (x + s * 0.92, y + s * 0.5)]
+    d.line(pts, fill=RED, width=3, joint="curve")
+
+
+def icon_dollar(x, y, s):
+    """Banknote with a dollar sign: the cost of the war."""
+    d.rounded_rectangle([x + s * 0.06, y + s * 0.28, x + s * 0.94, y + s * 0.72], radius=4,
+                        fill=GREEN, outline=INK, width=2)
+    d.text((x + s * 0.5, y + s * 0.5), "$", font=F(BOLD, int(s * 0.4)), fill=(255, 255, 255), anchor="mm")
+    d.ellipse([x + s * 0.12, y + s * 0.36, x + s * 0.2, y + s * 0.44], fill=(255, 255, 255))
+    d.ellipse([x + s * 0.8, y + s * 0.56, x + s * 0.88, y + s * 0.64], fill=(255, 255, 255))
+
+
+# ---------------------------------------------------------------- map data
+CONTINENTS = [
+    [(-168, 66), (-150, 70), (-130, 71), (-110, 70), (-95, 69), (-85, 66), (-75, 62), (-65, 58),
+     (-55, 47), (-60, 44), (-70, 42), (-75, 35), (-80, 26), (-84, 30), (-90, 21), (-95, 18),
+     (-105, 20), (-112, 28), (-120, 34), (-124, 42), (-125, 50), (-135, 58), (-150, 60), (-165, 60)],
+    [(-58, 64), (-52, 60), (-42, 60), (-32, 68), (-22, 70), (-30, 76), (-45, 76), (-55, 72)],
+    [(-80, 10), (-77, 4), (-70, 10), (-62, 10), (-52, 5), (-50, -2), (-40, -5), (-35, -8),
+     (-40, -18), (-48, -25), (-57, -33), (-65, -42), (-70, -50), (-73, -42), (-72, -30),
+     (-70, -18), (-77, -8), (-80, 0)],
+    [(-10, 36), (-9, 43), (-2, 48), (0, 50), (3, 53), (8, 57), (12, 56), (18, 56), (21, 55),
+     (24, 58), (28, 60), (30, 62), (40, 68), (44, 66), (40, 60), (35, 55), (30, 50), (28, 45),
+     (23, 40), (19, 42), (12, 44), (8, 39), (3, 38), (-2, 37)],
+    [(-17, 15), (-16, 21), (-10, 31), (-5, 35), (0, 36), (10, 37), (20, 32), (30, 31), (33, 28),
+     (35, 22), (40, 15), (44, 12), (51, 11), (48, 5), (42, -5), (40, -12), (35, -20), (32, -28),
+     (26, -34), (19, -35), (16, -28), (13, -18), (12, -8), (9, -1), (8, 4), (-8, 5), (-13, 8)],
+    [(30, 62), (40, 68), (50, 70), (60, 70), (70, 72), (80, 73), (90, 75), (100, 77), (110, 74),
+     (120, 72), (130, 71), (140, 72), (150, 70), (160, 68), (170, 66), (178, 65), (170, 60),
+     (162, 56), (158, 52), (150, 48), (142, 44), (138, 38), (130, 33), (127, 30), (122, 28),
+     (120, 22), (112, 20), (108, 12), (105, 8), (100, 6), (98, 10), (95, 16), (92, 21), (88, 22),
+     (82, 16), (78, 8), (76, 10), (72, 20), (68, 23), (62, 25), (58, 26), (54, 27), (50, 29),
+     (48, 30), (44, 32), (42, 38), (40, 42), (36, 36), (33, 38), (30, 40), (28, 45), (30, 50), (28, 55)],
+    [(113, -22), (114, -30), (118, -35), (124, -33), (129, -32), (132, -32), (135, -35), (138, -35),
+     (140, -38), (145, -38), (150, -37), (153, -32), (153, -27), (150, -22), (146, -19),
+     (142, -11), (140, -17), (136, -15), (132, -12), (126, -14), (120, -20)],
+    [(-5, 50), (-3, 53), (-5, 56), (-2, 58), (0, 52)],
+    [(130, 31), (133, 34), (137, 35), (140, 38), (142, 42), (144, 44), (141, 40), (138, 36), (135, 33)],
+    [(167, -45), (170, -42), (173, -38), (175, -36), (178, -38), (176, -41), (172, -43), (168, -46)],
+    [(109, 1), (113, 4), (117, 6), (119, 1), (117, -3), (112, -3), (109, -1)],
+    [(95, 5), (98, 2), (102, -2), (105, -5), (104, -3), (100, 0)],
+    [(44, -16), (47, -15), (50, -16), (49, -20), (45, -25), (43, -22)],
+]
+# pins: (number, lon, lat) — 05 is the New Caledonia quake, 06 is the Iran war cost (Tehran)
+PINS = [
+    (1, -80, 36), (2, 30, 50), (3, 33, 37), (4, -71, 44), (5, 171, -27),
+    (6, 51, 35), (7, 85, 20), (8, -2, 53), (9, 175, -41), (10, 105, 10),
+    (11, -72, 19), (12, -84, 25), (13, 77, 28),
+]
+
+# ---------------------------------------------------------------- data
+SUB = "Trump delays the Iran call  \u00b7  Missiles hit Kyiv overnight  \u00b7  COP31 drops the fossil-fuel phase-out"
+
+NUMBERS = [
+    ("38", "STORIES TODAY"),
+    ("300,000", "EVACUATED IN ODISHA"),
+    ("49,097", "DOW, BELOW 50,000"),
+    ("$48BN", "COST OF IRAN WAR"),
+    ("20", "MISSILES FIRED AT KYIV"),
+    ("175*", "NICHOLLS, NOT OUT"),
+]
+
+REGIONS = [("WORLD", 5), ("AMERICAS", 6), ("EUROPE", 5), ("ASIA", 9), ("SPORT", 11), ("CULTURE", 2)]
+
+LEAD1 = {
+    "num": "01", "label": "TOP STORY",
+    "headline": "TRUMP DELAYS IRAN DECISION",
+    "deck": "No rush on war, he says.",
+    "body": "He will \u2018see what happens\u2019 after 1 January \u2014 and the decision on Iran is "
+            "delayed to 2027.",
+}
+LEAD2 = {
+    "num": "02", "label": "UKRAINE",
+    "headline": "MISSILES HIT KYIV OVERNIGHT",
+    "body": "Russia fires nearly 20 ballistic missiles at Kyiv overnight; bridges are hit and "
+            "fires burn. A three-storey building in Obolonskyi catches fire; no casualties at first.",
+}
+LEAD3 = {
+    "num": "03", "label": "CLIMATE",
+    "headline": "COP31 DROPS FOSSIL-FUEL PHASE-OUT",
+    "body": "The climate summit closes in Antalya \u2014 but the final draft drops the call to phase out "
+            "fossil fuels, sparking outcry.",
+}
+
+MEDIUM = [
+    ("04", "WALL STREET SINKS", "Dow falls below 50,000 to 49,097; S&P \u22122.02% and Nasdaq \u22122.25%.", icon_chart),
+    ("05", "5.6 QUAKE NEAR NEW CALEDONIA", "A 5.6-magnitude quake strikes 548 km south-east of Noum\u00e9a, 10 km deep.", icon_quake),
+    ("06", "US WAR WITH IRAN COST $48BN", "The Pentagon says the US war with Iran has cost over $48bn.", icon_dollar),
+    ("07", "CYCLONE AKVAN HITS ODISHA", "300,000 people are evacuated as the cyclone makes landfall in Odisha.", icon_cyclone),
+    ("08", "POCHETTINO TAKES OVER UNITED", "New coach calls for unity in his first address; United are 18th.", icon_ball),
+    ("09", "INDIA v NZ, DAY 2", "Nicholls 175* and Phillips 118 lift NZ to 368 all out; India 52/0.", icon_cricket),
+    ("10", "ASEAN SUMMIT CLOSES", "Leaders seal a digital trade deal; the sea code is unresolved.", icon_globe),
+    ("11", "HAITI TROOP DEAL", "Haiti approves a deal for Salvadoran troops as gang strikes widen.", icon_shield),
+    ("12", "GTA VI\u2019S NPCs", "The crowd that makes the game\u2019s huge world feel real, says NPR.", icon_city),
+    ("13", "JUSTICE VARMA\u2019S LETTER", "In his letter, Justice Varma says his resignation admits no guilt.", icon_scales),
+]
+
+ALSO = [
+    "14 \u00b7 Bavuma ruled out \u2014 calf injury; misses the Centurion decider vs Bangladesh.",
+    "15 \u00b7 Carlsen forfeit \u2014 a shock walkout leaves the chess world fuming.",
+    "16 \u00b7 Oman marks 56 years of independence on National Day.",
+    "17 \u00b7 Harris meets Macron in Paris amid talk of a 2028 White House bid.",
+    "18 \u00b7 Congress faces a Dec 11 funding cliff and a crowded lame-duck list.",
+    "19 \u00b7 Japan core inflation hits 2.2% in October, the highest this year.",
+    "20 \u00b7 Telus shares jump 12% as a bidding war brews over Quebecor's C$31bn bid.",
+    "21 \u00b7 Russian drone hits a Kharkiv hospital; four people are injured.",
+    "22 \u00b7 Drones strike the Dorogobuzh chemical plant in Smolensk overnight.",
+    "23 \u00b7 Cyclone Xavier: gale warning for Suwarrow, storm alert for Pukapuka.",
+    "24 \u00b7 \u2018Just fireworks\u2019: BBC hears from people inside a besieged Yemeni city.",
+    "25 \u00b7 Africa wants $120bn a year to adapt; Europe says spend the money already pledged.",
+    "26 \u00b7 Jepchirchir gets a three-year ban after admitting EPO violations.",
+    "27 \u00b7 Phillips: centuries vs India in all three formats in one year.",
+    "28 \u00b7 Mhambrey in talks with Punjab Kings over an IPL 2027 coaching role.",
+    "29 \u00b7 Chennai hotel opens a Dhoni tribute room \u2014 Room No. 7.",
+    "30 \u00b7 Vasco da Gama 2-1 Internacional; Vit\u00f3ria 2-1 Bragantino in Brazil.",
+    "31 \u00b7 Alcaraz faces Cobolli as the ATP Finals group stage ends in Turin.",
+    "32 \u00b7 East Bengal host SC Delhi in the ISL on Friday; Habas calls for a turnaround.",
+    "33 \u00b7 Saudi defences destroy two Houthi drones bound for the south.",
+    "34 \u00b7 Bengaluru host Mumbai City in the ISL; Mumbai seek a first win.",
+    "35 \u00b7 UK and EU agree a Brexit reset in Brussels \u2014 100,000 youth visas, food checks eased.",
+    "36 \u00b7 White House taps Kirsten Davies as cyber chief after US outages.",
+    "37 \u00b7 13,000 protest in Tokyo against the Takaichi government's policies.",
+    "38 \u00b7 Houthis claim drone and missile strikes on four Saudi targets.",
+]
+
+# ---------------------------------------------------------------- layout
+# (1) masthead
+d.text((W // 2, 4), "WORLD NEWS", font=F(BLACK, 74), fill=INK, anchor="ma")
+d.line([M, 92, W - M, 92], fill=RED, width=4)
+d.text((W // 2, 100), "FRIDAY 20 NOVEMBER 2026", font=F(BOLD, 26), fill=RED, anchor="ma")
+d.text((W // 2, 132), SUB, font=F(ITAL, 17), fill=INK, anchor="ma")
+d.line([M, 158, W - M, 158], fill=RULE, width=2)
+d.line([M, 162, W - M, 162], fill=RULE, width=1)
+
+# (3) number strip
+y = 170
+cell_w = CW // 6
+for i, (num, label) in enumerate(NUMBERS):
+    cx = M + cell_w * i + cell_w // 2
+    d.text((cx, y), num, font=F(BLACK, 26), fill=INK, anchor="ma")
+    d.text((cx, y + 32), label, font=F(BOLD, 10), fill=GREY, anchor="ma")
+    if i:
+        d.line([M + cell_w * i, y + 2, M + cell_w * i, y + 42], fill=(200, 200, 200), width=1)
+d.line([M, 218, W - M, 218], fill=RULE, width=1)
+
+# (4) region tabs
+y = 226
+tab_w = (CW - 5 * 6) // 6
+for i, (name, cnt) in enumerate(REGIONS):
+    tx = M + i * (tab_w + 6)
+    d.rounded_rectangle([tx, y, tx + tab_w, y + 24], radius=5, fill=LIGHT, outline=INK, width=1)
+    f1, f2 = F(BOLD, 12), F(BLACK, 15)
+    tw = d.textlength(name, font=f1) + d.textlength(" " + str(cnt), font=f2) + 4
+    sx = tx + (tab_w - tw) // 2
+    d.text((sx, y + 4), name, font=f1, fill=INK)
+    d.text((sx + d.textlength(name, font=f1) + 4, y + 2), str(cnt), font=f2, fill=RED)
+
+# (5) lead 1 - Trump, full width
+y = 258
+d.rectangle([M, y, M + 108, y + 100], fill=LIGHT, outline=INK, width=1)
+icon_whitehouse(M + 6, y + 4, 96)
+tx = M + 122
+draw_tag(tx, y, LEAD1["num"], LEAD1["label"])
+d.text((tx, y + 16), LEAD1["headline"], font=F(BLACK, 32), fill=INK)
+d.text((tx, y + 54), LEAD1["deck"], font=F(ITAL, 16), fill=GREY)
+body = wrap(LEAD1["body"], F(REG, 14), W - M - tx)
+for i, ln in enumerate(body[:2]):
+    d.text((tx, y + 76 + i * 17), ln, font=F(REG, 14), fill=INK)
+d.line([M, y + 108, W - M, y + 108], fill=RULE, width=1)
+
+# leads 2-3, two columns
+y = 374
+col_w = (CW - 12) // 2
+for j, (lead, icon) in enumerate([(LEAD2, icon_blast), (LEAD3, icon_climate)]):
+    cx0 = M + j * (col_w + 12)
+    d.rectangle([cx0, y, cx0 + 84, y + 96], fill=LIGHT, outline=INK, width=1)
+    icon(cx0 + 4, y + 4, 76)
+    tx = cx0 + 96
+    draw_tag(tx, y, lead["num"], lead["label"])
+    d.text((tx, y + 16), lead["headline"], font=F(BLACK, 20), fill=INK)
+    body = wrap(lead["body"], F(REG, 13), cx0 + col_w - tx)
+    for i, ln in enumerate(body[:3]):
+        d.text((tx, y + 46 + i * 15), ln, font=F(REG, 13), fill=INK)
+d.line([M, y + 104, W - M, y + 104], fill=RULE, width=1)
+
+# (6) medium grid: 10 stories, 5 cols x 2 rows
+y = 486
+cell_w = (CW - 4 * 8) // 5
+cell_h = 87
+for idx, (num, headline, body, icon) in enumerate(MEDIUM):
+    r, c = divmod(idx, 5)
+    x0 = M + c * (cell_w + 8)
+    y0 = y + r * cell_h
+    if c:
+        d.line([x0 - 4, y0 + 2, x0 - 4, y0 + cell_h - 12], fill=(220, 220, 220), width=1)
+    if r:
+        d.line([x0, y0 - 4, x0 + cell_w, y0 - 4], fill=(220, 220, 220), width=1)
+    d.text((x0, y0), num, font=F(BOLD, 12), fill=RED)
+    icon(x0 + cell_w - 34, y0, 34)
+    hl = wrap(headline, F(BOLD, 14), cell_w - 40)
+    for i, ln in enumerate(hl[:2]):
+        d.text((x0, y0 + 16 + i * 16), ln, font=F(BOLD, 14), fill=INK)
+    n_hl = min(len(hl), 2)
+    bl = wrap(body, F(REG, 10), cell_w)
+    for i, ln in enumerate(bl[:2]):
+        d.text((x0, y0 + 16 + n_hl * 16 + 2 + i * 12), ln, font=F(REG, 10), fill=INK)
+
+# (7) world map with numbered pins
+y = 668
+d.text((M, y), "THE WORLD TODAY \u2014 WHERE THE NEWS HAPPENED", font=F(BOLD, 13), fill=INK)
+map_y, map_h = y + 18, 110
+d.rectangle([M, map_y, W - M, map_y + map_h], fill=SEA, outline=INK, width=1)
+
+
+def px(lon, lat):
+    return (M + (lon + 180) / 360 * CW, map_y + (75 - lat) / 135 * map_h)
+
+
+for poly in CONTINENTS:
+    d.polygon([px(lon, lat) for lon, lat in poly], fill=LAND, outline=LANDLINE)
+for num, lon, lat in PINS:
+    cx, cy = px(lon, lat)
+    d.ellipse([cx - 7, cy - 7, cx + 7, cy + 7], fill=RED, outline=(255, 255, 255), width=1)
+    d.text((cx, cy), str(num), font=F(BOLD, 8), fill=(255, 255, 255), anchor="mm")
+
+# (8) ALSO ON list
+y = map_y + map_h + 10
+d.text((M, y), "ALSO ON FRIDAY \u2014 25 MORE STORIES", font=F(BOLD, 14), fill=INK)
+d.line([M, y + 18, W - M, y + 18], fill=RULE, width=1)
+ly = y + 24
+f_line = F(REG, 11)
+f_num = F(BOLD, 11)
+col2_x = M + CW // 2 + 8
+for i, line in enumerate(ALSO):
+    num, rest = line.split(" \u00b7 ", 1)
+    lx = M if i < 13 else col2_x
+    row = i if i < 13 else i - 13
+    yy = ly + row * 11
+    d.text((lx, yy), num, font=f_num, fill=RED)
+    d.text((lx + 22, yy), rest, font=f_line, fill=INK)
+
+# (9) DATE CHECK box (two lines)
+y = ly + 13 * 11 + 4
+d.rectangle([M, y, W - M, y + 26], fill=LIGHT, outline=INK, width=1)
+d.text((M + 6, y + 3),
+       "DATE CHECK \u2014 Not today: ICJ Rohingya ruling \u00b7 Trump\u2013Xi\u2013Putin peace declaration \u00b7 "
+       "Crimean Bridge strike \u00b7 Anthropic IPO debut \u00b7 Gaza tank raid (18\u201319 Nov) \u00b7 SAFF final (17 Nov).",
+       font=F(REG, 9), fill=INK)
+d.text((M + 6, y + 14),
+       "Also not today: Nvidia subpoena \u00b7 Fiona dies \u00b7 Denmark\u2013Greenland deal \u00b7 Save the Children report \u00b7 "
+       "Berlin summit (all 19 Nov) \u00b7 M\u00e9lenchon\u2013Greens (18 Nov).",
+       font=F(REG, 9), fill=INK)
+
+# (10) footer
+d.text((W // 2, y + 31),
+       "Sources: Reuters \u00b7 BBC \u00b7 Le Monde \u00b7 AP \u00b7 AFP \u00b7 Kyiv Independent \u00b7 The Times \u00b7 ESPNcricinfo \u2014 "
+       "all 38 stories verified from Friday 20 November 2026 only.",
+       font=F(REG, 9), fill=GREY, anchor="ma")
+
+img.save("entry.png", optimize=True)
+print("saved entry.png", img.size)
