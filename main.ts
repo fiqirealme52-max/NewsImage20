@@ -1,7 +1,7 @@
 /**
  * NewsImage20 — entry program for the make.fun news-image-20261120
- * competition ("World News — 20 November 2026", 38-story VISUAL
- * REVISION edition).
+ * competition ("World News — 20 November 2026", 38-story REBUILD 2
+ * edition).
  *
  * The front page is drawn ahead of time by draw.py and shipped as
  * entry.png next to this file. This program copies those exact bytes
@@ -12,17 +12,25 @@
  *   - it fits inside the 1 MiB size limit.
  * If any check fails the program throws instead of writing output.
  *
- * What changed in the visual revision (same 38 verified stories,
- * same facts, same dates — only the presentation):
- *   - Cyclone Akvan is lead #01 with a big coloured scene; Trump and
- *     Kyiv keep their leads with full-width night/dusk scene bands.
- *   - Masthead is the giant serif date "Friday 20 November 2026"
- *     under the kicker "THE WORLD IN ONE DAY".
- *   - All ten medium stories carry small coloured illustrations and
- *     a visible "CONFIRMED . outlet" source tag.
- *   - The world map is dark navy with cream continents, red pins and
- *     a legend; the paper is warm cream with serif headlines.
- *   - Region tabs are geographic and sum to 38.
+ * What changed in rebuild 2 (same 38 stories, re-verified facts,
+ * rebuilt presentation from the deep top-10 research of 21 Nov):
+ *   - The featured 13 are now the top-10 consensus set (Kyiv, Akvan,
+ *     AI sell-off, COP31, UK-EU, Japan CPI, Phillips 118, Poland
+ *     missile, Bukele, Iraq, Italy strike, Korea impeach, Kenya oil).
+ *   - Three leads side by side, each with a big scene (>=50% of its
+ *     card); the AI sell-off is lead #03 with a trading-screen scene.
+ *   - All ten medium stories carry a full-width scene band (>=40% of
+ *     the card) and a tiered source tag (CONFIRMED / REPORTED /
+ *     CLAIM / FORECAST) with a legend in the footer.
+ *   - Corrected numbers: S&P -3.7%, Nasdaq -5.28%, Dow 48,147.33,
+ *     372,000 evacuated, ~110 missiles (27 ballistic + 84 cruise),
+ *     Japan CPI headline 2.3% / core 2.2%.
+ *   - The world map is dark navy with cream continents, 13 numbered
+ *     red pins and a caption naming all 13; the paper is warm cream
+ *     with serif headlines.
+ *   - Region tabs are geographic and sum to 38; DATE CHECK names the
+ *     Thursday stories left out (with the Wed 18 Nov corrections)
+ *     and the four "not yet" items.
  *
  * Deterministic by construction: the same input bytes always produce
  * the same output bytes. No network, no clock, no randomness, and
